@@ -17,7 +17,9 @@ public class BNote : Window {
 
     this.search_box = new Entry();
     this.note_list = new TreeView();
-    setup_treeview(this.note_list);
+
+    setup_search_box_signals();
+    setup_treeview();
 
     var note_scroll = new ScrolledWindow (null, null);
     note_scroll.set_policy (PolicyType.AUTOMATIC, PolicyType.AUTOMATIC);
@@ -28,25 +30,28 @@ public class BNote : Window {
     note_list_scroll.add (this.note_list);
 
     var paned = new VPaned();
-    paned.pack1(note_list_scroll,true,true);
-    paned.pack2(note_scroll,true,true);
+    paned.pack1(note_list_scroll,true,false);
+    paned.pack2(note_scroll,true,false);
+    paned.set_position(150);
   
-
     var vbox = new VBox (false, 0);
     vbox.pack_start (this.search_box, false, true, 0);
     vbox.pack_start (paned, true, true, 0);
-    //vbox.pack_start (note_scroll, true, true, 0);
     add (vbox);
 
   }
 
-  private void setup_treeview (TreeView view) {
+  private void setup_search_box_signals(){
+
+  }
+
+  private void setup_treeview () {
     var listmodel = new ListStore (4, typeof (string), typeof (string),
         typeof (string), typeof (string));
-    view.set_model (listmodel);
+    note_list.set_model (listmodel);
 
-    view.insert_column_with_attributes (-1, "Title", new CellRendererText (), "text", 0);
-    view.insert_column_with_attributes (-1, "Date Added", new CellRendererText (), "text", 1);
+    note_list.insert_column_with_attributes (-1, "Title", new CellRendererText (), "text", 0);
+    note_list.insert_column_with_attributes (-1, "Date Added", new CellRendererText (), "text", 1);
 
     var cell = new CellRendererText ();
     cell.set ("foreground_set", true);
