@@ -7,9 +7,14 @@ class BNote:
     # Initialize datastore (sqlite for now)
     self.notes = BNoteDataStore()
     self.cur_note = None
+    self.filtered_notes = self.notes.get_all()
+
+    # For detecting keyboard shortcuts
+    self.ctrl_down = False
 
     self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     self.window.set_default_size(500,600)
+    self._setup_global_keyboard_shortcuts()
 
     # Search Text Box
     self.search_box = gtk.Entry()  
@@ -59,11 +64,20 @@ class BNote:
     self.window.add(vbox)
     self.window.show()
 
+  def _update_notes_list(self):
+    self.note_list_store.clear()
+    if self.filtered_notes:
+      i = 0
+      for note in self.filtered_notes:
+        if i == 0:
+          print "updating buffer text for : %s" % (note.title)
+          self.note_buffer.set_text(note.body)
+
+        self.note_list_store.append([note.title,note.get_modified(),note.get_created(),i])
+        i = i + 1
+
   def _setup_note_list(self):
-    self.note_list_store = gtk.TreeStore(str,str,str)
-    #Test the TreeView
-    #for i in range(10):
-      #self.note_list_store.append(None, ["blah blah %i" % i, "Today at 10PM", "Today at 11PM"])
+    self.note_list_store = gtk.ListStore(str,str,str,int)
 
     self.note_list_view = gtk.TreeView(self.note_list_store)
     self.title_column = gtk.TreeViewColumn('Title')
@@ -74,12 +88,36 @@ class BNote:
     self.note_list_view.append_column(self.date_modified_column)
 
     self.cell = gtk.CellRendererText()
+
     self.title_column.pack_start(self.cell,True)
     self.title_column.add_attribute(self.cell,'text',0)
+
     self.date_modified_column.pack_start(self.cell,True)
-    self.date_modified_column.add_attribute(self.cell,'text',0)
+    self.date_modified_column.add_attribute(self.cell,'text',1)
+
     self.date_created_column.pack_start(self.cell,True)
-    self.date_created_column.add_attribute(self.cell,'text',0)
+    self.date_created_column.add_attribute(self.cell,'text',2)
+  
+    self._update_notes_list()
+
+  def _setup_global_keyboard_shortcuts(self):
+    self.window.connect("key-press-event",self.global_key_press)
+    self.window.connect("key-release-event",self.global_key_release)
+
+  def global_key_press(self, widget, event):
+    keyname = gtk.gdk.keyval_name(event.keyval)
+    if keyname.find("Escape") == 0:
+      self.search_box.set_text('')
+      self.search_box.grab_focus()
+    if keyname.find("Control") == 0:
+      self.ctrl_down = True
+    if keyname == "l" and self.ctrl_down:
+      self.search_box.grab_focus()
+
+  def global_key_release(self, widget, event):
+    keyname = gtk.gdk.keyval_name(event.keyval)
+    if keyname.find("Control") == 0:
+      self.ctrl_down = False
 
   def _setup_search_box_signals(self):
     self.search_box.connect("changed",self.search_modified)
@@ -88,12 +126,18 @@ class BNote:
   def search_modified(self,widget,delete_type=None,delete_count=0):
     text = self.search_box.get_text()
     if text != "":
-      self.notes.search(text)
+      self.filtered_notes = self.notes.search(text)
+    else:
+      self.filtered_notes = self.notes.get_all()
+
+    self._update_notes_list()
 
   def search_activated(self,widget):
     text = self.search_box.get_text()
+    #TODO need to also check that an item isn't highlighted in the notes list
     if text != "":
       self.cur_note = self.notes.create(text)
+      self.note_buffer.set_text('')
       self.note_text.grab_focus()
 
   def _setup_note_signals(self):
