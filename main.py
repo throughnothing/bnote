@@ -70,10 +70,10 @@ class BNote:
       i = 0
       for note in self.filtered_notes:
         if i == 0:
-          print "updating buffer text for : %s" % (note.title)
+          print "updating buffer text for : %s to:\n%s" % (note.title,note.body)
           self.note_buffer.set_text(note.body)
 
-        self.note_list_store.append([note.title,note.get_modified(),note.get_created(),i])
+        self.note_list_store.append([note.title,note.modified,note.created,i])
         i = i + 1
 
   def _setup_note_list(self):
@@ -137,7 +137,7 @@ class BNote:
     #TODO need to also check that an item isn't highlighted in the notes list
     if text != "":
       self.cur_note = self.notes.create(text)
-      self.note_buffer.set_text('')
+      #self.note_buffer.set_text('')
       self.note_text.grab_focus()
 
   def _setup_note_signals(self):
@@ -147,7 +147,7 @@ class BNote:
     s_iter = self.note_buffer.get_start_iter()
     e_iter = self.note_buffer.get_end_iter()
     text = self.note_buffer.get_text(s_iter,e_iter)
-    self.cur_note.set_text(text)
+    self.cur_note.body = text
     self.notes.save(self.cur_note)
 
   def main(self):
